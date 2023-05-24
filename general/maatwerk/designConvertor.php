@@ -159,59 +159,68 @@ class designConvertor
         $this->blockId++;
         return $this->LinedPage[$this->i];
     }
-    
+
     public function getStyleguide($artboard){
-        $css = $less = [];
-        foreach ($artboard->layers as $layer) {
-            $selector = "." . str_replace(" ", "-", substr($layer->name,0,15));
+        $css = [];
+        $result = $this->recursiveLayersCSS($artboard->layers, $css, /*$less*/);
+        $css = $result;
+//        $less = $result[1];
+        unset($result);
 
-            if ($layer->type == "shapeLayer"){
-                $css[$selector]['width'] = $layer->bounds->width . "px";
-                $css[$selector]['height'] =  $layer->bounds->height . "px";
-                $css[$selector]['color'] = sprintf("#%02x%02x%02x", $layer->effects->fills[0]->color->r,$layer->effects->fills[0]->color->g,$layer->effects->fills[0]->color->b);
-                if(!in_array($css[$selector]['color'], $less)) $less[/*'fill-color'*/] .= $css[$selector]['color'];
-                if($layer->effects->borders){
-                    $css[$selector]['border-width'] = $layer->effects->borders[0]->width . "px";
-                    $css[$selector]['border-style'] = $layer->effects->borders[0]->style;
-                    $css[$selector]['border-color'] = sprintf("#%02x%02x%02x", $layer->effects->borders[0]->color->r,$layer->effects->borders[0]->color->g,$layer->effects->borders[0]->color->b);;
-                    if(!in_array($css[$selector]['border-color'], $less)) $less[/*'border-color'*/] .= $css[$selector]['border-color'];
-                }
-            }
-            else if ($layer->type == "textLayer"){
-//                $css[$selector]['width'] = $layer->text->frame->width . "px";
-//                $css[$selector]['height'] =  $layer->text->frame->height . "px";
-                $css[$selector]['color'] = sprintf("#%02x%02x%02x", $layer->text->defaultStyle->color->r,$layer->text->defaultStyle->color->g,$layer->text->defaultStyle->color->b);
-                if(!in_array($css[$selector]['color'], $less)) $less[/*'text-color'*/] .= $css[$selector]['color'];
-                $css[$selector]['font-family'] = $layer->text->defaultStyle->font->name;
-                if(!in_array($css[$selector]['font-family'], $less)) $less[/*'font-family'*/] .= $css[$selector]['font-family'];
-
-                $css[$selector]['font-size'] = $layer->text->defaultStyle->font->size . "px";
-                if($layer->text->defaultStyle->font->italic){
-                    $css[$selector]['font-style'] = "italic";
-                }
-                if($layer->text->defaultStyle->font->bold){
-                    $css[$selector]['font-weight'] = "bold";
-                }
-                $css[$selector]['letter-spacing'] = $layer->text->defaultStyle->font->letterSpacing. "px";
-//                $css[$selector]['line-height'] = $layer->text->defaultStyle->font->paragraphSpacing;
-                $css[$selector]['text-align'] = $layer->text->defaultStyle->font->align;
-                $css[$selector]['text-decoration'] = $layer->text->styles[0]->font->underline ;
-                $css[$selector]['text-decoration'] .= " " . $layer->text->styles[0]->font->linethrough;
-            }
-
-            if($layer->effects->fills[0]->opacity !== null) $css[$selector]['opacity'] = $layer->effects->fills[0]->opacity;
-        }
-
-        $cssString = "@home: 'https://dev81.lined.nl/websitenaam202X/ ';\n";
-        for ($i = 0; $i < count($less); $i++){
-            $cssString .= "@kleur$i: " . $less[$i]. ";\n";
-        }
-        $cssString .= "\n";
+        $cssString = "";
         return $this->css_array_to_string($css, $cssString);
+    }
+    protected function recursiveLayersCSS($layers, $css, /*$less*/) {
+        foreach ($layers as $layer) if ($layer->visible) {
+            $selector = "." . str_replace(" ", "-", substr($layer->name,0,15));
+            if ($layer->type == "groupLayer") {
+                $result = $this->recursiveLayersCSS($layer->layers, $css);
+                $css = $result;/*[0];
+                $less = $result[1];*/
+            }
+            else {
+                if ($layer->type == "shapeLayer"){
+                    $css[$selector]['width'] = $layer->bounds->width . "px";
+                    $css[$selector]['height'] =  $layer->bounds->height . "px";
+                    $css[$selector]['color'] = sprintf("#%02x%02x%02x", $layer->effects->fills[0]->color->r,$layer->effects->fills[0]->color->g,$layer->effects->fills[0]->color->b);
+//                    if(!in_array($css[$selector]['color'], $less)) $less[/*'fill-color'*/] .= $css[$selector]['color'];
+                    if($layer->effects->borders){
+                        $css[$selector]['border-width'] = $layer->effects->borders[0]->width . "px";
+                        $css[$selector]['border-style'] = $layer->effects->borders[0]->style;
+                        $css[$selector]['border-color'] = sprintf("#%02x%02x%02x", $layer->effects->borders[0]->color->r,$layer->effects->borders[0]->color->g,$layer->effects->borders[0]->color->b);;
+//                        if(!in_array($css[$selector]['border-color'], $less)) $less[/*'border-color'*/] .= $css[$selector]['border-color'];
+                    }
+                }
+                else if ($layer->type == "textLayer"){
+    //                $css[$selector]['width'] = $layer->text->frame->width . "px";
+    //                $css[$selector]['height'] =  $layer->text->frame->height . "px";
+                    $css[$selector]['color'] = sprintf("#%02x%02x%02x", $layer->text->defaultStyle->color->r,$layer->text->defaultStyle->color->g,$layer->text->defaultStyle->color->b);
+//                    if(!in_array($css[$selector]['color'], $less)) $less[/*'text-color'*/] .= $css[$selector]['color'];
+                    $css[$selector]['font-family'] = $layer->text->defaultStyle->font->name;
+//                    if(!in_array($css[$selector]['font-family'], $less)) $less[/*'font-family'*/] .= $css[$selector]['font-family'];
+
+                    $css[$selector]['font-size'] = $layer->text->defaultStyle->font->size . "px";
+                    if($layer->text->defaultStyle->font->italic){
+                        $css[$selector]['font-style'] = "italic";
+                    }
+                    if($layer->text->defaultStyle->font->bold){
+                        $css[$selector]['font-weight'] = "bold";
+                    }
+                    $css[$selector]['letter-spacing'] = $layer->text->defaultStyle->font->letterSpacing. "px";
+    //                $css[$selector]['line-height'] = $layer->text->defaultStyle->font->paragraphSpacing;
+                    $css[$selector]['text-align'] = $layer->text->defaultStyle->font->align;
+                    $css[$selector]['text-decoration'] = $layer->text->styles[0]->font->underline ;
+                    $css[$selector]['text-decoration'] .= " " . $layer->text->styles[0]->font->linethrough;
+                }
+
+                if($layer->effects->fills[0]->opacity !== null) $css[$selector]['opacity'] = $layer->effects->fills[0]->opacity;
+            }
+        }
+//        return [$css, $less];
+        return $css;
     }
     protected function css_array_to_string($css, $cssString) : string{
         $prefix = '   ';
-        $i = 0;
         foreach ($css as $key => $value) {
             if (is_array($value)) {
                 $selector = $key;
@@ -222,12 +231,7 @@ class designConvertor
             }
             else {
                 $property = $key;
-                // if value exists in variable array?
-                /*if(in_array($value, $less)){
-                    $cssString .= $prefix . "$property: @var$i;\n";
-                    $i++;
-                }
-                else*/ $cssString .= $prefix . "$property: $value;\n";
+                $cssString .= $prefix . "$property: $value;\n";
             }
         }
         return $cssString;
