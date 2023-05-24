@@ -27,10 +27,12 @@ class designConvertor
             $this->LinedPage[$this->i]->data->page = new stdClass();
             $this->LinedPage[$this->i]->data->page->{"pagina_id"} = $this->LinedPage[$this->i]->senderId;
             $this->LinedPage[$this->i]->data->page->{"toon_inleiding"} = 1;
-            $this->LinedPage[$this->i]->data->page->{"create_time"} = date("Y-m-d H:i:s");
             $this->LinedPage[$this->i]->data->page->{"menu_kop"} =
             $this->LinedPage[$this->i]->data->page->{"pagina_titel"} = $artboard->name;
             $this->LinedPage[$this->i]->data->page->{"url_value"} = str_replace(" ", "-", strtolower($artboard->name));
+            $this->LinedPage[$this->i]->data->page->parent =
+                $this->LinedPage[$this->i]->data->page->parent =0;
+
             $this->LinedPage[$this->i]->data->images = [];
             $this->i++;
 
@@ -43,14 +45,14 @@ class designConvertor
             $this->setNewSegment();
             $this->i++;
 
-            $this->recursiveLayers($artboard->layers, $selectedLayers);
+            $this->recursiveLayersLined($artboard->layers, $selectedLayers);
 
             return json_encode($this->LinedPage, JSON_PRETTY_PRINT);
         } catch (Exception $e) {
             return $e->getMessage();
         }
     }
-    protected function recursiveLayers($layers, $selectedLayers): void {
+    protected function recursiveLayersLined($layers, $selectedLayers): void {
         foreach ($layers as $layer) if ($layer->visible) {
             if ($selectedLayers !== null && !in_array($layer->id, $selectedLayers)) {
                 continue;
@@ -65,7 +67,7 @@ class designConvertor
                     $this->setNewSegment();
                     $this->blockCount = 0;
                     $this->i++;
-                    $this->recursiveLayers($layer->layers, $selectedLayers);
+                    $this->recursiveLayersLined($layer->layers, $selectedLayers);
                 } else {
                     $this->setNewBlock($layer);
                     $this->i++;
@@ -79,15 +81,16 @@ class designConvertor
 
         $this->LinedPage[$this->i]->data->segment = new stdClass();
         $this->LinedPage[$this->i]->data->segment->id = $this->LinedPage[$this->i]->senderId;
-        $this->LinedPage[$this->i]->data->segment->{"pagina_id"} = $this->LinedPage[$this->i]->data->parentPageId;
+            $this->LinedPage[$this->i]->data->segment->{"pagina_id"} = $this->LinedPage[$this->i]->data->parentPageId;
         $this->LinedPage[$this->i]->data->segment->title =
-        $this->LinedPage[$this->i]->data->segment->name = "standaard";
+            $this->LinedPage[$this->i]->data->segment->name = "standaard";
         $this->LinedPage[$this->i]->data->segment->volgorde = $this->segment;
         $this->LinedPage[$this->i]->data->segment->class =
-        $this->LinedPage[$this->i]->data->segment->label = "";
-
+            $this->LinedPage[$this->i]->data->segment->label = "";
+        $this->LinedPage[$this->i]->data->segment->detailType =
+            $this->LinedPage[$this->i]->data->segment->{"parent_id"} = 0;
         $this->LinedPage[$this->i]->data->segment->voorwaarden =
-        $this->LinedPage[$this->i]->data->segment->{"broadcast_position"} = null;
+            $this->LinedPage[$this->i]->data->segment->{"broadcast_position"} = null;
 
         $this->segment++;
         return $this->LinedPage[$this->i];
@@ -97,7 +100,7 @@ class designConvertor
         $this->LinedPage[$this->i]->senderId = $this->blockId;
         $this->LinedPage[$this->i]->data->parentSegmentId = $this->segment;
         $this->LinedPage[$this->i]->data->forHeader =
-        $this->LinedPage[$this->i]->data->forFooter = false;
+            $this->LinedPage[$this->i]->data->forFooter = false;
         $this->LinedPage[$this->i]->data->block = new stdClass();
         $type = match ($layer->type) {
             "shapeLayer" => "afbeelding",
@@ -108,36 +111,40 @@ class designConvertor
         $this->LinedPage[$this->i]->data->block->{"type_block"} = $type;
         $this->LinedPage[$this->i]->data->block->volgorde = $this->blockCount;
         $this->LinedPage[$this->i]->data->block->{"toon_inleiding"} = 1;
-        $this->LinedPage[$this->i]->data->block->sectie = "sectie-" . $this->segment;
+        $this->LinedPage[$this->i]->data->block->sectie = "sectie-1" /*. $this->segment*/;
         $this->LinedPage[$this->i]->data->block->{"sectie-segment"} = $this->LinedPage[$this->i]->data->parentSegmentId;
         $this->LinedPage[$this->i]->data->block->grid = "grid.php";
         $this->LinedPage[$this->i]->data->block->klasse = substr($layer->name,0,15);
 
         $this->LinedPage[$this->i]->data->block->koptekst =
-        $this->LinedPage[$this->i]->data->block->blocknaam =
-        $this->LinedPage[$this->i]->data->block->css_id =
-        $this->LinedPage[$this->i]->data->block->template = "";
+            $this->LinedPage[$this->i]->data->block->blocknaam =
+            $this->LinedPage[$this->i]->data->block->css_id =
+            $this->LinedPage[$this->i]->data->block->template = "";
 
         $this->LinedPage[$this->i]->data->block->{"user_create"} =
-        $this->LinedPage[$this->i]->data->block->{"user_author"} =
-        $this->LinedPage[$this->i]->data->block->{"user_update"} =
-        $this->LinedPage[$this->i]->data->block->{"sitemap_pagina_id"} =
-        $this->LinedPage[$this->i]->data->block->{"opnemen_in_sitemap"} = 0;
+            $this->LinedPage[$this->i]->data->block->{"user_author"} =
+            $this->LinedPage[$this->i]->data->block->{"user_update"} =
+            $this->LinedPage[$this->i]->data->block->{"sitemap_pagina_id"} =
+            $this->LinedPage[$this->i]->data->block->{"opnemen_in_sitemap"} = 0;
 
         $this->LinedPage[$this->i]->data->block->{"create_time"} = date("Y-m-d H:i:s");;
         $this->LinedPage[$this->i]->data->block->{"template_config"} =
-        $this->LinedPage[$this->i]->data->block->voorwaarden =
-        $this->LinedPage[$this->i]->data->block->{"broadcast_position"} = null;
+            $this->LinedPage[$this->i]->data->block->voorwaarden =
+            $this->LinedPage[$this->i]->data->block->{"broadcast_position"} = null;
         $this->LinedPage[$this->i]->data->blockData = new stdClass();
         switch ($layer->type) {
             case "shapeLayer":
-                $this->LinedPage[$this->i]->data->images[] = new stdClass();
-                if($layer->effects->fills[0]->pattern->filename){
-                    $this->LinedPage[$this->i]->data->images[0]->bestand = $layer->effects->fills[0]->pattern->filename;
+                if($layer->effects->fills[0]->pattern->filename) {
+                    $this->LinedPage[$this->i]->data->block->{"type_block"} = "html";
+                    $this->LinedPage[$this->i]->data->blockData->html =
+                        "<img width=" . $layer->bounds->width / 1.5 . " height=" . $layer->bounds->height / 1.5 ." src='" . $layer->effects->fills[0]->pattern->filename . "'>";
                 }
-
-                $this->LinedPage[$this->i]->data->block->template = "afbeelding";
-                $this->LinedPage[$this->i]->data->blockData->{"block_id"} = $this->LinedPage[$this->i]->data->block->{"block_id"};
+//                $this->LinedPage[$this->i]->data->images[] = new stdClass();
+//                if($layer->effects->fills[0]->pattern->filename){
+//                    $this->LinedPage[$this->i]->data->images[0]->bestand = $layer->effects->fills[0]->pattern->filename;
+//                }
+//                $this->LinedPage[$this->i]->data->block->template = "afbeelding";
+//                $this->LinedPage[$this->i]->data->blockData->{"block_id"} = $this->LinedPage[$this->i]->data->block->{"block_id"};
 
                 break;
             default:
@@ -152,7 +159,7 @@ class designConvertor
         $this->blockId++;
         return $this->LinedPage[$this->i];
     }
-
+    
     public function getStyleguide($artboard){
         $css = $less = [];
         foreach ($artboard->layers as $layer) {
