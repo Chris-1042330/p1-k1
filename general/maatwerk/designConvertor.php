@@ -114,6 +114,7 @@ class designConvertor
         $this->LinedPage[$this->i]->data->block->sectie = "sectie-1" /*. $this->segment*/;
         $this->LinedPage[$this->i]->data->block->{"sectie-segment"} = $this->LinedPage[$this->i]->data->parentSegmentId;
         $this->LinedPage[$this->i]->data->block->grid = "grid.php";
+        //TODO: check duplicates of class name
         $this->LinedPage[$this->i]->data->block->klasse = substr($layer->name,0,15);
 
         $this->LinedPage[$this->i]->data->block->koptekst =
@@ -134,6 +135,7 @@ class designConvertor
         $this->LinedPage[$this->i]->data->blockData = new stdClass();
         switch ($layer->type) {
             case "shapeLayer":
+                // Afbeeldingen worden opgeslagen in een tekstblok
                 if($layer->effects->fills[0]->pattern->filename) {
                     $this->LinedPage[$this->i]->data->block->{"type_block"} = "html";
                     $this->LinedPage[$this->i]->data->blockData->html =
@@ -160,21 +162,25 @@ class designConvertor
         return $this->LinedPage[$this->i];
     }
 
-    public function getStyleguide($artboard){
+    public function getStyleguide($artboard, $selectedLayers = null){
         $css = [];
-        $result = $this->recursiveLayersCSS($artboard->layers, $css, /*$less*/);
+        $result = $this->recursiveLayersCSS($artboard->layers, $css, $selectedLayers);
         $css = $result;
-//        $less = $result[1];
         unset($result);
 
         $cssString = "";
         return $this->css_array_to_string($css, $cssString);
     }
-    protected function recursiveLayersCSS($layers, $css, /*$less*/) {
+    protected function recursiveLayersCSS($layers, $css, $selectedLayers) {
         foreach ($layers as $layer) if ($layer->visible) {
+            if ($selectedLayers !== null && !in_array($layer->id, $selectedLayers)) {
+                continue;
+            }
             $selector = "." . str_replace(" ", "-", substr($layer->name,0,15));
+//            if(!in_array($selector, $css[$selector])) $selector;
+
             if ($layer->type == "groupLayer") {
-                $result = $this->recursiveLayersCSS($layer->layers, $css);
+                $result = $this->recursiveLayersCSS($layer->layers, $css, $selectedLayers);
                 $css = $result;/*[0];
                 $less = $result[1];*/
             }
