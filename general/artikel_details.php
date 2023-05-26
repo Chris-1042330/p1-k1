@@ -34,7 +34,7 @@ if (isset($_GET['artboard'])) {
     $currentArtboard = json_decode($artboardContent);
     if(!empty($_POST)){
         switch($_POST) {
-            case isset($_POST['download']):
+            case isset($_POST['octopus']):
                 header("Content-Disposition: attachment;filename=octopus_{$currentArtboard->name}.json");
                 $content = json_encode($currentArtboard, JSON_PRETTY_PRINT);
                 break;
@@ -43,8 +43,8 @@ if (isset($_GET['artboard'])) {
                 $content = $convert->getLined($currentArtboard, $_POST['layers']);
                 break;
             case isset($_POST['CSS']):
-                header("Content-Disposition: attachment;filename=css_{$currentArtboard->name}.less");
-                $content = $convert->getStyleguide($currentArtboard);
+                header("Content-Disposition: attachment;filename=css_{$currentArtboard->name}.css");
+                $content = $convert->getStyleguide($currentArtboard, $_POST['layers']);
                 break;
         }
         if(!$content == 0){
@@ -102,33 +102,34 @@ if (isset($_POST['delete'])) {
 
     <?php } else { ?>
         <section class="col-md-4 col-sm-8 col-xs-12">
+            <p>Design Type: <?= $design['format']; ?><br>
+                <span style="font-size: 12px"> Design ID: <?= $design['id']; ?></span>
+            </p>
             <?php if (!empty($currentArtboard)) { ?>
-            <form method="post">
-                <button type="submit" style="width: 100%" class="btn" value="true" name="download">Download Octopus design</button><br>
-                <button type="submit" style="width: 100%" class="btn" value="true" name="LCMS">ALL Download Lined JSON-schema</button><br>
-                <button type="submit" style="width: 100%" class="btn" value="true" name="CSS">Download CSS styleguide</button><br>
-            </form>
-            <form method="post">
-            </form>
-                <ul>
-                    <?php if (!empty($currentArtboard)) { ?>
-                        <li><b>Artboard Name:</b> <?= $currentArtboard->name ?><br>
-                            <span style="font-size: 12px">Artboard ID: <?= $currentArtboard->id ?></span>
-                        </li>
-                        <li><b>Datetime:</b> <?=date("Y-m-d H:i:s", $currentArtboard->timeStamp / 1000)?></li>
-                        <li><b>Octopus:</b> <?=$currentArtboard->version->{"octopus-common"}?></li>
-                        <li><b>Bounds:</b> <br>
-                            <span style="font-size: 12px">Width: <?= $currentArtboard->bounds->width?></span><br>
-                            <span style="font-size: 12px">Height: <?= $currentArtboard->bounds->height?></span><br>
-                            <!--                    <span style="font-size: 12px">Top: --><?php //= $currentArtboard->bounds->top?><!--</span><br>-->
-                            <!--                    <span style="font-size: 12px">Left: --><?php //= $currentArtboard->bounds->left?><!--</span><br>-->
-                            <span style="font-size: 12px">Right: <?= $currentArtboard->bounds->right?></span><br>
-                            <span style="font-size: 12px">Bottom: <?= $currentArtboard->bounds->bottom?></span>
-                        </li>
-                        <li><b>Frame:</b> X: <?= $currentArtboard->frame->x ?>; Y: <?= $currentArtboard->frame->y ?></li>
-                        <li><b>Layers:</b> <?=count($currentArtboard->layers) ?></li>
-                    <?php } ?>
-                </ul>
+<!--            <form method="post">-->
+<!--                <button type="submit" style="width: 100%" class="btn" value="true" name="download">Download Octopus design</button><br>-->
+<!--                <button type="submit" style="width: 100%" class="btn" value="true" name="LCMS">ALL Download Lined JSON-schema</button><br>-->
+<!--                <button type="submit" style="width: 100%" class="btn" value="true" name="CSS">Download CSS styleguide</button><br>-->
+<!--            </form>-->
+            <ul>
+                <?php if (!empty($currentArtboard)) { ?>
+                    <li><b>Artboard Name:</b> <?= $currentArtboard->name ?><br>
+                        <span style="font-size: 12px">Artboard ID: <?= $currentArtboard->id ?></span>
+                    </li>
+                    <li><b>Datetime:</b> <?=date("Y-m-d H:i:s", $currentArtboard->timeStamp / 1000)?></li>
+                    <li><b>Octopus:</b> <?=$currentArtboard->version->{"octopus-common"}?></li>
+                    <li><b>Bounds:</b> <br>
+                        <span style="font-size: 12px">Width: <?= $currentArtboard->bounds->width?></span><br>
+                        <span style="font-size: 12px">Height: <?= $currentArtboard->bounds->height?></span><br>
+    <!--                    <span style="font-size: 12px">Top: --><?php //= $currentArtboard->bounds->top?><!--</span><br>-->
+    <!--                    <span style="font-size: 12px">Left: --><?php //= $currentArtboard->bounds->left?><!--</span><br>-->
+<!--                        <span style="font-size: 12px">Right: --><?php //= $currentArtboard->bounds->right?><!--</span><br>-->
+<!--                        <span style="font-size: 12px">Bottom: --><?php //= $currentArtboard->bounds->bottom?><!--</span>-->
+                    </li>
+                    <li><b>Frame:</b> X: <?= $currentArtboard->frame->x ?>; Y: <?= $currentArtboard->frame->y ?></li>
+<!--                    <li><b>Layers:</b> --><?php //=count($currentArtboard->layers) ?><!--</li>-->
+                <?php } ?>
+            </ul>
 <!--                <label>Choose the layers you want to download</label>-->
 <!--                <select name="layers[]" size="30"  class='btn' style="width: 100%; height: 100%" multiple="multiple">-->
 <!--                --><?php
@@ -154,13 +155,18 @@ if (isset($_POST['delete'])) {
             <?php } ?>
         </section>
         <section class="col-md-8 col-sm-8 col-xs-12">
-            <p>Design Type: <?= $design['format']; ?><br>
-                <span style="font-size: 12px"> Design ID: <?= $design['id']; ?></span>
-            </p>
 
-            <form method="post">
+
                 <?php if (!empty($currentArtboard)) { ?>
-                    <button type="submit" class="btn btn-dark" value="true" name="LCMS">Download geselecteerde lagen in Lined JSON-schema</button><br>
+            <form method="post">
+                <button type="submit" style="width: 100%" class="btn" value="true" name="octopus">Download Octopus design</button><br>
+                <button type="submit" style="width: 100%" class="btn" value="true" name="LCMS">ALL Download Lined JSON-schema</button><br>
+                <button type="submit" style="width: 100%" class="btn" value="true" name="CSS">Download CSS-styleguide</button><br><br>
+            </form>
+            <form method="post">
+                    <button type="submit" style="width: 100%" class="btn btn-dark" value="true" name="LCMS">Download geselecteerde lagen in Lined JSON-schema</button><br>
+                    <button type="submit" style="width: 100%" class="btn btn-dark" value="true" name="CSS">Download geselecteerde lagen in CSS-styleguide</button><br>
+
                     <legend><b>Choose the layers you want to download</b></legend>
                 <?php }
                 function displayArrayRecursively($array, $indent='') {
